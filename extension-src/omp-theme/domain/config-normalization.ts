@@ -20,7 +20,7 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 		separator: "powerline-thin",
 		layout: Object.freeze({
 			left: ["model_effort", "native_usage"],
-			right: ["path", "context_used"],
+			right: ["path_plain", "context_used"],
 			secondary: [],
 		}),
 		disabledSegments: [],

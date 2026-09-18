@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createDoctor } from "../extension-src/omp-theme/app/doctor.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
 import { renderStatus } from "../extension-src/omp-theme/domain/status-renderer.js";
-import { createBuiltinSegments, type StatusSnapshot, type UsageSnapshot } from "../extension-src/omp-theme/domain/status.js";
+import { createBuiltinSegments, formatCwdForFooter, type StatusSnapshot, type UsageSnapshot } from "../extension-src/omp-theme/domain/status.js";
 import type { ResolvedTheme } from "../extension-src/omp-theme/domain/theme.js";
 
 const theme: ResolvedTheme = {
@@ -15,6 +15,22 @@ const theme: ResolvedTheme = {
 	noColor: true,
 };
 
+/** Run `body` with `HOME`/`USERPROFILE` pinned, so the `~` abbreviation is deterministic. */
+function withHome(home: string, body: () => void): void {
+	const previousHome = process.env.HOME;
+	const previousProfile = process.env.USERPROFILE;
+	process.env.HOME = home;
+	process.env.USERPROFILE = home;
+	try {
+		body();
+	} finally {
+		if (previousHome === undefined) delete process.env.HOME;
+		else process.env.HOME = previousHome;
+		if (previousProfile === undefined) delete process.env.USERPROFILE;
+		else process.env.USERPROFILE = previousProfile;
+	}
+}
+
 test("claude preset resolves its coordinated editor and status composition", () => {
 	const result = resolveConfigDetailed({ global: { preset: "claude" } });
 
@@ -24,7 +40,7 @@ test("claude preset resolves its coordinated editor and status composition", () 
 	assert.equal(result.config.statusLine.separator, "|");
 	assert.deepEqual(result.config.statusLine.layout, {
 		left: ["model_effort", "native_usage"],
-		right: ["path", "context_used"],
+		right: ["path_plain", "context_used"],
 		secondary: [],
 	});
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
@@ -121,7 +137,7 @@ test("claude status puts the model and native usage cluster left, path and conte
 	const snapshot: StatusSnapshot = {
 		model: "gpt-5.6-sol",
 		thinkingLevel: "high",
-		cwd: "D:/Personal/a-very-long-project-name",
+		cwd: "C:\\Users\\example\\Desktop\\test\\test7",
 		git: {
 			available: true,
 			branch: "feature/a-long-branch-name",
@@ -142,24 +158,27 @@ test("claude status puts the model and native usage cluster left, path and conte
 		},
 	};
 
-	const rendered = renderStatus(config.statusLine.layout, snapshot, 200, {
-		separator: config.statusLine.separator,
-		segments: createBuiltinSegments(),
-		theme,
-	});
+	withHome("C:\\Users\\example", () => {
+		const rendered = renderStatus(config.statusLine.layout, snapshot, 200, {
+			separator: config.statusLine.separator,
+			segments: createBuiltinSegments(),
+			theme,
+		});
 
-	// Sorted by segment priority, not by layout position.
-	assert.deepEqual(rendered.visibleSegments, ["context_used", "native_usage", "path", "model_effort"]);
-	// Left group: model first, then the native usage cluster, joined by `|`.
-	// (The model glyph is empty in this stub theme, hence the leading space.)
-	assert.equal(rendered.left.trim(), "gpt-5.6-sol · ◒ high | ↑3.1k ↓87 R2.6k CH90.8% $0.001");
-	// Right group: the working directory first, then the `used / window` readout.
-	// (Trimmed because the path glyph is also empty in this stub theme.)
-	assert.equal(rendered.right.trim(), "D:/Personal/a-very-long-project-name | 11% used | 111.4K/1M");
-	assert.ok(!rendered.primary.includes("feature/a-long-branch-name"));
-	assert.ok(!rendered.primary.includes("░"));
-	// No separator is left dangling in front of the right-aligned group.
-	assert.match(rendered.primary, /\$0\.001 {2,}D:\/Personal/);
+		// Sorted by segment priority, not by layout position.
+		assert.deepEqual(rendered.visibleSegments, ["context_used", "native_usage", "path_plain", "model_effort"]);
+		// Left group: model first, then the native usage cluster, joined by `|`.
+		// (The model glyph is empty in this stub theme, hence the leading space.)
+		assert.equal(rendered.left.trim(), "gpt-5.6-sol · ◒ high | ↑3.1k ↓87 R2.6k CH90.8% $0.001");
+		// Right group: the working directory first (native `~` abbreviation, no icon),
+		// then the `used / window` readout.
+		assert.equal(rendered.right.trim(), "~\\Desktop\\test\\test7 | 11% used | 111.4K/1M");
+		assert.ok(!rendered.right.includes("📁"));
+		assert.ok(!rendered.primary.includes("feature/a-long-branch-name"));
+		assert.ok(!rendered.primary.includes("░"));
+		// No separator is left dangling in front of the right-aligned group.
+		assert.match(rendered.primary, /\$0\.001 {2,}~\\Desktop/);
+	});
 });
 
 test("native usage keeps the native number formatting and drops empty parts", () => {
@@ -191,4 +210,26 @@ test("omp and claude presets do not inherit default secondary status items", () 
 		assert.ok(!config.statusLine.layout.left.includes("extension_statuses"));
 		assert.ok(!config.statusLine.layout.right.includes("extension_statuses"));
 	}
+});
+
+test("path_plain abbreviates the home directory exactly like Pi's footer", () => {
+	// Expected values are Pi's own `formatCwdForFooter` output for the same inputs.
+	const cases = [
+		["C:\\Users\\example\\Desktop\\test\\test7", "~\\Desktop\\test\\test7"],
+		["C:\\Users\\example", "~"],
+		["C:\\Users\\example\\", "~"],
+		["C:\\Users\\example2\\dev", "C:\\Users\\example2\\dev"],
+		["C:\\Users\\example\\..\\example\\dev", "~\\dev"],
+		["D:\\projects\\app", "D:\\projects\\app"],
+		["C:\\Users\\EXAMPLE\\dev", "~\\dev"],
+		["C:\\Users\\example\\dev\\", "~\\dev"],
+		["C:\\", "C:\\"],
+	];
+	withHome("C:\\Users\\example", () => {
+		for (const [cwd, expected] of cases) {
+			assert.equal(formatCwdForFooter(cwd as string, process.env.HOME), expected, cwd);
+		}
+		// No home directory known: the path is printed unchanged.
+		assert.equal(formatCwdForFooter("C:\\Users\\example\\dev", undefined), "C:\\Users\\example\\dev");
+	});
 });

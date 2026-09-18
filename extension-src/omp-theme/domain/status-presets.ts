@@ -35,12 +35,12 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 	// here a config that overrides just one group silently inherits `default`'s
 	// other two, which is not the layout the preset promises.
 	//
-	// fork: the path segment and the context gauge are replaced by Pi's native
-	// footer usage cluster on the left; the right edge carries the working
-	// directory followed by the `used / window` readout.
+	// fork: the context gauge is replaced by Pi's native footer usage cluster on
+	// the left; the right edge carries the working directory (native `~`
+	// abbreviation, no icon) followed by the `used / window` readout.
 	claude: Object.freeze({
 		left: ["model_effort", "native_usage"],
-		right: ["path", "context_used"],
+		right: ["path_plain", "context_used"],
 		secondary: [],
 	}),
 });

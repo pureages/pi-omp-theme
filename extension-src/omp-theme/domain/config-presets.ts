@@ -14,10 +14,10 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 			layout: {
 				// No `pi` segment: the π wordmark is omp's own branding, not Pi's.
 				// fork: Pi's native usage cluster follows the model on the left; the
-				// right edge carries the working directory and the `used / window`
-				// readout.
+				// right edge carries the natively abbreviated working directory and
+				// the `used / window` readout.
 				left: ["model_effort", "native_usage"],
-				right: ["path", "context_used"],
+				right: ["path_plain", "context_used"],
 				// No extension statuses: they are other packages' text and cost a whole row.
 				secondary: [],
 			},

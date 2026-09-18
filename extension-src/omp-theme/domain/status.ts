@@ -1,3 +1,4 @@
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { ResolvedTheme, SemanticToken } from "./theme.js";
 
 export const STATUS_SEGMENT_IDS = [
@@ -6,6 +7,7 @@ export const STATUS_SEGMENT_IDS = [
 	"thinking",
 	"model_effort",
 	"path",
+	"path_plain",
 	"git",
 	"context_pct",
 	"context_bar",
@@ -233,6 +235,20 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 				visible: Boolean(snapshot.cwd),
 				content: theme.apply("path", `${theme.glyph("path")} ${name ?? ""}`),
 				compactContent: theme.apply("path", name ?? ""),
+				truncatable: true,
+			};
+		}),
+		// The working directory the way Pi's native footer spells it: no icon, and
+		// the home prefix collapsed to `~` (`~\Desktop\test\test7`). Pi reads the
+		// platform home directory (`HOME || USERPROFILE`, note `||` not `??`) at
+		// render time, so a session started with a different home still abbreviates
+		// correctly.
+		segment("path_plain", 80, ({ snapshot }) => {
+			const name = snapshot.cwd;
+			if (!name) return { visible: false, content: "" };
+			return {
+				visible: true,
+				content: formatCwdForFooter(name, process.env.HOME || process.env.USERPROFILE),
 				truncatable: true,
 			};
 		}),
@@ -507,6 +523,27 @@ function formatTokens(value: number): string {
 		return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}K`;
 	}
 	return String(value);
+}
+
+/**
+ * Pi's own working-directory abbreviation, copied from `formatCwdForFooter` in
+ * Pi's `modes/interactive/components/footer.ts`: both paths are resolved, the
+ * home-directory prefix is replaced by `~`, and the remainder keeps the
+ * platform separator (`~\Desktop\test` on Windows, `~/src/app` on POSIX). A
+ * directory outside home is printed unchanged.
+ */
+export function formatCwdForFooter(cwd: string, home: string | undefined): string {
+	if (!home) return cwd;
+
+	const resolvedCwd = resolve(cwd);
+	const resolvedHome = resolve(home);
+	const relativeToHome = relative(resolvedHome, resolvedCwd);
+	const isInsideHome =
+		relativeToHome === "" ||
+		(relativeToHome !== ".." && !relativeToHome.startsWith(`..${sep}`) && !isAbsolute(relativeToHome));
+
+	if (!isInsideHome) return cwd;
+	return relativeToHome === "" ? "~" : `~${sep}${relativeToHome}`;
 }
 
 function effortLevel(snapshot: StatusSnapshot): ThinkingLevel | undefined {
