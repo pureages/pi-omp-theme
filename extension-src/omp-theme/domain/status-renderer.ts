@@ -107,7 +107,10 @@ export function renderStatus(
 	// Right-aligned trailing group: layout.right candidates render flush to the
 	// right edge, mirroring Pi's native footer (model • effort on the far right).
 	// Group order follows the layout declaration; the priority sort above only
-	// decides what drops on overflow.
+	// decides what drops on overflow. The groups are joined by plain padding, not
+	// the segment separator: a separator here would dangle in front of the gap,
+	// and Pi's own footer separates its left stats from the right side with
+	// whitespace alone.
 	const visibleIds = new Set(visible.map((candidate) => candidate.id));
 	const groupOf = (group: readonly StatusSegmentId[]) =>
 		group
@@ -121,7 +124,7 @@ export function renderStatus(
 	if (!rightText) {
 		primaryText = leftText;
 	} else {
-		const core = leftText ? `${leftText}${padding}${separator}${padding}` : "";
+		const core = leftText ? `${leftText}${padding}${padding}` : "";
 		const gap = Math.max(2, width - visibleWidth(core) - visibleWidth(rightText));
 		primaryText = `${core}${" ".repeat(gap)}${rightText}`;
 	}

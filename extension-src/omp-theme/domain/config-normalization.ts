@@ -19,8 +19,8 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 		enabled: true,
 		separator: "powerline-thin",
 		layout: Object.freeze({
-			left: ["native_usage"],
-			right: ["model_effort"],
+			left: ["model_effort", "native_usage"],
+			right: ["context_used"],
 			secondary: [],
 		}),
 		disabledSegments: [],

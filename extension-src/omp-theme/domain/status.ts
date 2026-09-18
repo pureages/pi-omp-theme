@@ -10,6 +10,7 @@ export const STATUS_SEGMENT_IDS = [
 	"context_pct",
 	"context_bar",
 	"claude_context",
+	"context_used",
 	"context_total",
 	"auto_compact",
 	"token_in",
@@ -315,6 +316,33 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 				};
 			},
 			true,
+		),
+		// The `used` half of the claude cluster on its own: `11% used | 111.4K/1M`.
+		// Same text and colors as `claude_context`, minus the bracket gauge — the
+		// claude preset right-aligns this and spends the left side on the native
+		// usage cluster instead of a bar.
+		segment(
+			"context_used",
+			90,
+			({ snapshot, theme }) => {
+				const percent = contextPercent(snapshot.context ?? {});
+				if (percent === undefined) return { visible: false, content: "" };
+				const token = claudeContextToken(percent);
+				const current = snapshot.context?.currentTokens;
+				const total = snapshot.context?.windowTokens;
+				const separator = ` ${theme.apply("separator", "|")} `;
+				const used = `${theme.apply(token, `${Math.round(percent)}%`)} ${theme.apply("muted", "used")}`;
+				const tokens =
+					current !== undefined && total !== undefined
+						? theme.apply("muted", `${formatTokens(current)}/${formatTokens(total)}`)
+						: "";
+				return {
+					visible: true,
+					content: [used, tokens].filter(Boolean).join(separator),
+					compactContent: theme.apply(token, `${Math.round(percent)}% used`),
+				};
+			},
+			false,
 		),
 		// The size of the window, compactly: `272K`. Raw digits (`21760/272000`)
 		// read as noise on a status line, and the used-of-total pair is already

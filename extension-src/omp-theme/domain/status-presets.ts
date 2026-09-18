@@ -36,11 +36,11 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 	// other two, which is not the layout the preset promises.
 	//
 	// fork: the path segment and the context gauge are replaced by Pi's native
-	// footer usage cluster, and the model moves to the right edge the way Pi's
-	// native footer places it.
+	// footer usage cluster on the left, with the `used / window` readout keeping
+	// the right edge.
 	claude: Object.freeze({
-		left: ["native_usage"],
-		right: ["model_effort"],
+		left: ["model_effort", "native_usage"],
+		right: ["context_used"],
 		secondary: [],
 	}),
 });

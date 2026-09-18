@@ -23,8 +23,8 @@ test("claude preset resolves its coordinated editor and status composition", () 
 	assert.equal(result.config.editor.frame, "claude");
 	assert.equal(result.config.statusLine.separator, "|");
 	assert.deepEqual(result.config.statusLine.layout, {
-		left: ["native_usage"],
-		right: ["model_effort"],
+		left: ["model_effort", "native_usage"],
+		right: ["context_used"],
 		secondary: [],
 	});
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
@@ -116,7 +116,7 @@ test("matching explicit values and unrelated customization do not trigger preset
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
 });
 
-test("claude status mirrors Pi's native usage footer and drops path/git/context", () => {
+test("claude status puts the model and native usage cluster left, context right", () => {
 	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
 	const snapshot: StatusSnapshot = {
 		model: "gpt-5.6-sol",
@@ -130,28 +130,36 @@ test("claude status mirrors Pi's native usage footer and drops path/git/context"
 			untracked: 0,
 			refreshing: false,
 		},
-		context: { currentTokens: 19_200, windowTokens: 272_000 },
+		context: { currentTokens: 111_400, windowTokens: 1_000_000, percent: 11.14 },
 		usage: {
-			inputTokens: 13_400,
-			outputTokens: 14_200,
-			cacheReadTokens: 225_000,
+			inputTokens: 3_100,
+			outputTokens: 87,
+			cacheReadTokens: 2_600,
 			cacheWriteTokens: 0,
-			cacheHitRate: 98.83,
-			cost: 0.011,
+			cacheHitRate: 90.83,
+			cost: 0.001,
 			streaming: false,
 		},
 	};
 
-	const rendered = renderStatus(config.statusLine.layout, snapshot, 80, {
+	const rendered = renderStatus(config.statusLine.layout, snapshot, 200, {
 		separator: config.statusLine.separator,
 		segments: createBuiltinSegments(),
 		theme,
 	});
 
-	assert.deepEqual(rendered.visibleSegments, ["native_usage", "model_effort"]);
-	assert.match(rendered.primary, /↑13k ↓14k R225k CH98\.8% \$0\.011/);
+	// Sorted by segment priority, not by layout position.
+	assert.deepEqual(rendered.visibleSegments, ["context_used", "native_usage", "model_effort"]);
+	// Left group: model first, then the native usage cluster, joined by `|`.
+	// (The model glyph is empty in this stub theme, hence the leading space.)
+	assert.equal(rendered.left.trim(), "gpt-5.6-sol · ◒ high | ↑3.1k ↓87 R2.6k CH90.8% $0.001");
+	// Right group: the `used / window` readout, no bracket gauge, no cwd, no git.
+	assert.equal(rendered.right, "11% used | 111.4K/1M");
 	assert.ok(!rendered.primary.includes("📁"));
-	assert.ok(!rendered.primary.includes("used"));
+	assert.ok(!rendered.primary.includes("feature/a-long-branch-name"));
+	assert.ok(!rendered.primary.includes("░"));
+	// No separator is left dangling in front of the right-aligned group.
+	assert.match(rendered.primary, /\$0\.001 {2,}11% used/);
 });
 
 test("native usage keeps the native number formatting and drops empty parts", () => {
