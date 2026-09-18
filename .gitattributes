@@ -1,0 +1,5 @@
+# Normalize source line endings, but keep the shipped bundle byte-identical on
+# every platform: it is a build artifact, not source, and a CRLF rewrite would
+# make every checkout dirty.
+* text=auto
+dist/extensions/*.ts -text
