@@ -1,6 +1,10 @@
 node_modules/
-dist/
-coverage/
+# fork: `dist/` is tracked on purpose. `pi install git:...` clones this repo and
+# runs `npm install --omit=dev` (no dev tooling, so nothing can build here), and
+# `pi update --extensions` runs `git clean -fdx` before reinstalling, which would
+# delete an untracked build. The built bundle therefore ships in the repo, the
+# same way the upstream npm tarball does. Rebuild and commit it after every
+# source change: `npm run build && git add dist`.coverage/
 *.tsbuildinfo
 *.tgz
 *.log
