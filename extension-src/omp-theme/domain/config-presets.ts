@@ -13,8 +13,10 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 			separator: "|",
 			layout: {
 				// No `pi` segment: the π wordmark is omp's own branding, not Pi's.
-				left: ["model_effort", "path", "git", "claude_context"],
-				right: [],
+				// fork: Pi's native footer usage cluster replaces the path/git/context
+				// cluster, and the model is right-aligned like Pi's own footer.
+				left: ["native_usage"],
+				right: ["model_effort"],
 				// No extension statuses: they are other packages' text and cost a whole row.
 				secondary: [],
 			},

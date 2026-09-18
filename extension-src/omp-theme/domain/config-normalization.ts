@@ -19,13 +19,15 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 		enabled: true,
 		separator: "powerline-thin",
 		layout: Object.freeze({
-			left: ["path", "git", "context_bar", "cost"],
+			left: ["native_usage"],
 			right: ["model_effort"],
 			secondary: [],
 		}),
 		disabledSegments: [],
 		customItems: [],
-		bottomMargin: 1,
+		// fork: 0 keeps the status row flush against the terminal's last line, the
+		// way Pi's native footer sits. 1 reserved a blank row underneath it.
+		bottomMargin: 0,
 		contextBarWidth: 10,
 	}),
 	editor: Object.freeze({ enabled: true, style: "dock", frame: "rounded", showMetadata: false, hint: "" }),

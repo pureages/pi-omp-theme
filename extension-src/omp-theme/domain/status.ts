@@ -16,6 +16,7 @@ export const STATUS_SEGMENT_IDS = [
 	"token_out",
 	"cache_read",
 	"cache_write",
+	"native_usage",
 	"cost",
 	"time_spent",
 	"time",
@@ -54,6 +55,11 @@ export interface UsageSnapshot {
 	readonly outputTokens: number;
 	readonly cacheReadTokens: number;
 	readonly cacheWriteTokens: number;
+	/**
+	 * Cache hit rate of the most recent assistant turn, in percent — the same
+	 * figure Pi's native footer prints as `CH98.8%`.
+	 */
+	readonly cacheHitRate?: number;
 	readonly cost?: number;
 	readonly currency?: string;
 	readonly subscriptionMode?: "api" | "subscription" | "unknown";
@@ -344,6 +350,29 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 			visible: Boolean(snapshot.usage?.cacheWriteTokens),
 			content: theme.apply("cache", `${theme.glyph("cache")} w${snapshot.usage?.cacheWriteTokens ?? 0}`),
 		})),
+		// Pi's native footer usage cluster, spelled the way Pi spells it:
+		// `↑13k ↓14k R225k CH98.8% $0.011`. Unlike the theme's other usage
+		// segments this one prints the literal arrows rather than glyphs, because
+		// the point is to be indistinguishable from the built-in footer.
+		// Visibility rules and number formatting mirror pi's footer.js exactly.
+		segment("native_usage", 85, ({ snapshot, theme }) => {
+			const usage = snapshot.usage;
+			if (!usage) return { visible: false, content: "" };
+			const parts: string[] = [];
+			if (usage.inputTokens) parts.push(`↑${formatUsageTokens(usage.inputTokens)}`);
+			if (usage.outputTokens) parts.push(`↓${formatUsageTokens(usage.outputTokens)}`);
+			if (usage.cacheReadTokens) parts.push(`R${formatUsageTokens(usage.cacheReadTokens)}`);
+			if (usage.cacheWriteTokens) parts.push(`W${formatUsageTokens(usage.cacheWriteTokens)}`);
+			if ((usage.cacheReadTokens > 0 || usage.cacheWriteTokens > 0) && usage.cacheHitRate !== undefined) {
+				parts.push(`CH${usage.cacheHitRate.toFixed(1)}%`);
+			}
+			const subscription = usage.subscriptionMode === "subscription";
+			if ((usage.cost !== undefined && usage.cost !== 0) || subscription) {
+				parts.push(`$${(usage.cost ?? 0).toFixed(3)}${subscription ? " (sub)" : ""}`);
+			}
+			if (parts.length === 0) return { visible: false, content: "" };
+			return { visible: true, content: theme.apply("dim", parts.join(" ")), truncatable: true };
+		}),
 		segment("cost", 65, ({ snapshot, theme }) => {
 			const cost = snapshot.usage?.cost;
 			const content =
@@ -425,6 +454,19 @@ function contextBarToken(percent: number): SemanticToken {
 	if (percent >= 70) return "contextHigh";
 	if (percent >= 50) return "contextMedium";
 	return "contextLow";
+}
+
+/**
+ * Pi's own footer formatter (`footer.js`): `999` → `999`, `1300` → `1.3k`,
+ * `13000` → `13k`, `2250000` → `2.3M`. Kept separate from `formatTokens`, which
+ * is the theme's uppercase-K spelling used by the context and token segments.
+ */
+function formatUsageTokens(count: number): string {
+	if (count < 1_000) return String(count);
+	if (count < 10_000) return `${(count / 1_000).toFixed(1)}k`;
+	if (count < 1_000_000) return `${Math.round(count / 1_000)}k`;
+	if (count < 10_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+	return `${Math.round(count / 1_000_000)}M`;
 }
 
 function formatTokens(value: number): string {

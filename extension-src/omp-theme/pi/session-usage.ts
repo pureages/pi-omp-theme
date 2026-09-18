@@ -26,6 +26,7 @@ interface UsageTotals {
 export function usageFromSession(session: SessionUsageSource): UsageSnapshot | undefined {
 	const totals: UsageTotals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
 	let sawUsage = false;
+	let cacheHitRate: number | undefined;
 	for (const entry of session.getEntries()) {
 		if (entry.type === "message") {
 			if (entry.message.role !== "assistant" && entry.message.role !== "toolResult") continue;
@@ -33,6 +34,12 @@ export function usageFromSession(session: SessionUsageSource): UsageSnapshot | u
 			if (!usage) continue;
 			addUsage(totals, usage);
 			sawUsage = true;
+			if (entry.message.role === "assistant") {
+				// Pi's footer reports the hit rate of the most recent assistant turn, not
+				// the session-wide cacheRead/cacheWrite ratio.
+				const promptTokens = usage.input + usage.cacheRead + usage.cacheWrite;
+				cacheHitRate = promptTokens > 0 ? (usage.cacheRead / promptTokens) * 100 : undefined;
+			}
 		} else if ((entry.type === "branch_summary" || entry.type === "compaction") && entry.usage) {
 			addUsage(totals, entry.usage);
 			sawUsage = true;
@@ -44,6 +51,7 @@ export function usageFromSession(session: SessionUsageSource): UsageSnapshot | u
 		outputTokens: totals.output,
 		cacheReadTokens: totals.cacheRead,
 		cacheWriteTokens: totals.cacheWrite,
+		...(cacheHitRate !== undefined ? { cacheHitRate } : {}),
 		cost: totals.cost,
 		subscriptionMode: "unknown",
 		streaming: false,

@@ -34,9 +34,13 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 	// Mirrors the claude preset's own layout (config-presets.ts). Without an entry
 	// here a config that overrides just one group silently inherits `default`'s
 	// other two, which is not the layout the preset promises.
+	//
+	// fork: the path segment and the context gauge are replaced by Pi's native
+	// footer usage cluster, and the model moves to the right edge the way Pi's
+	// native footer places it.
 	claude: Object.freeze({
-		left: ["model_effort", "path", "git", "claude_context"],
-		right: [],
+		left: ["native_usage"],
+		right: ["model_effort"],
 		secondary: [],
 	}),
 });

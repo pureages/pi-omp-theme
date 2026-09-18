@@ -3,9 +3,8 @@ import { test } from "node:test";
 import { createDoctor } from "../extension-src/omp-theme/app/doctor.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
 import { renderStatus } from "../extension-src/omp-theme/domain/status-renderer.js";
-import { createBuiltinSegments, type StatusSnapshot } from "../extension-src/omp-theme/domain/status.js";
+import { createBuiltinSegments, type StatusSnapshot, type UsageSnapshot } from "../extension-src/omp-theme/domain/status.js";
 import type { ResolvedTheme } from "../extension-src/omp-theme/domain/theme.js";
-import { visibleWidth } from "../extension-src/omp-theme/shared/ansi.js";
 
 const theme: ResolvedTheme = {
 	color: () => "",
@@ -24,8 +23,8 @@ test("claude preset resolves its coordinated editor and status composition", () 
 	assert.equal(result.config.editor.frame, "claude");
 	assert.equal(result.config.statusLine.separator, "|");
 	assert.deepEqual(result.config.statusLine.layout, {
-		left: ["model_effort", "path", "git", "claude_context"],
-		right: [],
+		left: ["native_usage"],
+		right: ["model_effort"],
 		secondary: [],
 	});
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
@@ -117,7 +116,7 @@ test("matching explicit values and unrelated customization do not trigger preset
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
 });
 
-test("claude status keeps context visible and respects narrow terminal widths", () => {
+test("claude status mirrors Pi's native usage footer and drops path/git/context", () => {
 	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
 	const snapshot: StatusSnapshot = {
 		model: "gpt-5.6-sol",
@@ -132,18 +131,49 @@ test("claude status keeps context visible and respects narrow terminal widths", 
 			refreshing: false,
 		},
 		context: { currentTokens: 19_200, windowTokens: 272_000 },
+		usage: {
+			inputTokens: 13_400,
+			outputTokens: 14_200,
+			cacheReadTokens: 225_000,
+			cacheWriteTokens: 0,
+			cacheHitRate: 98.83,
+			cost: 0.011,
+			streaming: false,
+		},
 	};
 
-	for (const width of [10, 24, 48]) {
-		const rendered = renderStatus(config.statusLine.layout, snapshot, width, {
+	const rendered = renderStatus(config.statusLine.layout, snapshot, 80, {
+		separator: config.statusLine.separator,
+		segments: createBuiltinSegments(),
+		theme,
+	});
+
+	assert.deepEqual(rendered.visibleSegments, ["native_usage", "model_effort"]);
+	assert.match(rendered.primary, /↑13k ↓14k R225k CH98\.8% \$0\.011/);
+	assert.ok(!rendered.primary.includes("📁"));
+	assert.ok(!rendered.primary.includes("used"));
+});
+
+test("native usage keeps the native number formatting and drops empty parts", () => {
+	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
+	const render = (usage: UsageSnapshot): string =>
+		renderStatus(config.statusLine.layout, { usage }, 80, {
 			separator: config.statusLine.separator,
 			segments: createBuiltinSegments(),
 			theme,
-			options: { claude_context: { width: config.statusLine.contextBarWidth } },
-		});
-		assert.ok(rendered.visibleSegments.includes("claude_context"), `context missing at width ${width}`);
-		assert.ok(rendered.lines.every((line) => visibleWidth(line) <= width), `row overflow at width ${width}`);
-	}
+		}).primary;
+
+	// `999` stays raw, `1300` gets a decimal, `13000` rounds, `2250000` uses M.
+	assert.match(render({ inputTokens: 999, outputTokens: 1_300, cacheReadTokens: 0, cacheWriteTokens: 0, streaming: false }), /↑999 ↓1\.3k/);
+	assert.match(render({ inputTokens: 2_250_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, streaming: false }), /↑2\.3M/);
+	// No cost line at zero spend, no CH without cache traffic.
+	assert.ok(!render({ inputTokens: 1_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, cost: 0, streaming: false }).includes("$"));
+	assert.ok(!render({ inputTokens: 1_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, cacheHitRate: 99, streaming: false }).includes("CH"));
+	// `W` and `CH` appear once cache writes/reads are reported.
+	assert.match(
+		render({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 10, cacheWriteTokens: 5, cacheHitRate: 66.67, streaming: false }),
+		/R10 W5 CH66\.7%/,
+	);
 });
 
 test("omp and claude presets do not inherit default secondary status items", () => {
