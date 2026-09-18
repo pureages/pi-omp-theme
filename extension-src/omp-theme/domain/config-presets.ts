@@ -5,7 +5,14 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 	default: Object.freeze({
 		startup: { mode: "compact" },
 	}),
-	/** omp's "Claude Code" composer: full-width rules, no side borders, status on them. */
+	/**
+	 * omp's "Claude Code" composer: full-width rules, no side borders, status on them.
+	 *
+	 * fork: `startup.mode: "off"` keeps Pi's own `builtInHeader` (the `Pi vX.Y.Z`
+	 * line, the compact key hints, and the onboarding line) instead of the theme's
+	 * welcome card. `installStartup` bails out before it ever calls `setHeader`, so
+	 * the header container keeps the component Pi installed itself.
+	 */
 	claude: Object.freeze({
 		placement: "below",
 		editor: { style: "dock", frame: "claude", showMetadata: false },
@@ -22,7 +29,7 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 				secondary: [],
 			},
 		},
-		startup: { mode: "compact" },
+		startup: { mode: "off" },
 	}),
 	/**
 	 * omp's default composer: a rounded box whose top border carries the status

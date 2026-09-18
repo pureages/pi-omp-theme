@@ -40,6 +40,7 @@ export type SemanticToken =
 	| "usageCacheHit"
 	| "usageCost"
 	| "contextTokens"
+	| "contextUsed"
 	| "time"
 	| "separator"
 	| "hint";
@@ -112,6 +113,8 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	// token rather than `muted` so it can be recolored without touching the
 	// directory text next to it.
 	contextTokens: "#3ed6d6",
+	// fork: the word `used` in that same readout, painted orange.
+	contextUsed: "#ff9f43",
 	time: "muted",
 	separator: "dim",
 	hint: "#8a8a8a",

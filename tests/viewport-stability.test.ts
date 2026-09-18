@@ -28,6 +28,10 @@ import {
 } from "../extension-src/omp-theme/features/tools/boxed/session-config.js";
 
 const { config } = resolveConfigDetailed({ global: { preset: "claude" }, projectTrusted: true });
+
+// The claude preset ships Pi's own startup header now (`startup.mode: "off"`),
+// so these startup-card tests pin the card mode on explicitly.
+const cardConfig = { ...config, startup: { ...config.startup, mode: "compact" as const } };
 const uncolored = { fg: (_color: string, text: string) => text };
 
 /** A frame of `rows` painted lines whose viewport starts at `viewportTop`. */
@@ -134,7 +138,7 @@ function mountedStartupCard(
 			factory = next as typeof factory;
 		},
 	};
-	const installation = installStartup({ host, config, snapshot, generation: 1, requestRender: () => {} });
+	const installation = installStartup({ host, config: cardConfig, snapshot, generation: 1, requestRender: () => {} });
 	assert.ok(installation && factory);
 	return { installation, component: factory(tui, uncolored) };
 }

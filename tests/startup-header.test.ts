@@ -12,6 +12,10 @@ import {
 } from "../extension-src/omp-theme/features/startup/index.js";
 
 const { config } = resolveConfigDetailed({ global: { preset: "claude" }, projectTrusted: true });
+
+// The claude preset ships Pi's own startup header now (`startup.mode: "off"`),
+// so these startup-card tests pin the card mode on explicitly.
+const cardConfig = { ...config, startup: { ...config.startup, mode: "compact" as const } };
 const uncolored = { fg: (_color: string, text: string) => text };
 const resources: StartupResources = {
 	tools: 6,
@@ -34,8 +38,8 @@ const baseSnapshot: StartupSnapshot = {
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 test("the startup card paints resources, so dropping them rewrites its top rows in place", () => {
-	const withResources = renderStartup({ ...baseSnapshot, resources }, config, uncolored, 120);
-	const without = renderStartup({ ...baseSnapshot }, config, uncolored, 120);
+	const withResources = renderStartup({ ...baseSnapshot, resources }, cardConfig, uncolored, 120);
+	const without = renderStartup({ ...baseSnapshot }, cardConfig, uncolored, 120);
 
 	assert.equal(withResources.length, without.length, "the card keeps a fixed height");
 	const firstDifference = withResources.findIndex((line, index) => line !== without[index]);
@@ -49,7 +53,7 @@ test("the header key covers every snapshot field the card paints", () => {
 	// field missing from the key would silently freeze on screen. Anything the
 	// card does not paint must leave both the key and the output alone.
 	const mounted: StartupSnapshot = { ...baseSnapshot, resources };
-	const reference = renderStartup(mounted, config, uncolored, 120);
+	const reference = renderStartup(mounted, cardConfig, uncolored, 120);
 	const unpainted: StartupSnapshot[] = [
 		{ ...mounted, git: { available: true, branch: "main", staged: 1, unstaged: 2, untracked: 0, refreshing: false } },
 		{ ...mounted, context: { currentTokens: 1000, windowTokens: 200000, percent: 42 } },
@@ -62,7 +66,7 @@ test("the header key covers every snapshot field the card paints", () => {
 		{ ...mounted, extensionStatuses: [{ key: "todo", value: "3 open" }] },
 	];
 	for (const snapshot of unpainted) {
-		assert.deepEqual(renderStartup(snapshot, config, uncolored, 120), reference);
+		assert.deepEqual(renderStartup(snapshot, cardConfig, uncolored, 120), reference);
 		assert.equal(startupHeaderKey(snapshot), startupHeaderKey(mounted));
 	}
 
@@ -72,7 +76,7 @@ test("the header key covers every snapshot field the card paints", () => {
 		{ ...mounted, resources: { ...resources, sessions: [{ name: "another", timeAgo: "1d ago" }] } },
 	];
 	for (const snapshot of painted) {
-		assert.notDeepEqual(renderStartup(snapshot, config, uncolored, 120), reference);
+		assert.notDeepEqual(renderStartup(snapshot, cardConfig, uncolored, 120), reference);
 		assert.notEqual(startupHeaderKey(snapshot), startupHeaderKey(mounted));
 	}
 });
@@ -89,7 +93,7 @@ test("status-only snapshot updates never invalidate the mounted header", () => {
 	};
 	const installation = installStartup({
 		host,
-		config,
+		config: cardConfig,
 		snapshot: { ...baseSnapshot, resources },
 		generation: 1,
 		requestRender: () => headerRenders++,
@@ -135,7 +139,7 @@ test("runtime git invalidation hands the header the same snapshot as every other
 		ui: ui as unknown as NonNullable<RuntimeHost["ui"]>,
 		cwd: "D:\\Personal\\pi-omp-theme",
 		model: { id: "gpt-5.6-sol", name: "gpt-5.6-sol", provider: "openai-codex-2" },
-		config,
+		config: cardConfig,
 		startupReason: "startup",
 		resources,
 		gitRunner: {

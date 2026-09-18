@@ -4,6 +4,7 @@ import { createDoctor } from "../extension-src/omp-theme/app/doctor.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
 import { renderStatus } from "../extension-src/omp-theme/domain/status-renderer.js";
 import { createBuiltinSegments, formatCwdForFooter, type StatusSnapshot, type UsageSnapshot } from "../extension-src/omp-theme/domain/status.js";
+import { installStartup } from "../extension-src/omp-theme/features/startup/index.js";
 import { hexToAnsiPrefix, resolveTheme, type ResolvedTheme } from "../extension-src/omp-theme/domain/theme.js";
 
 const theme: ResolvedTheme = {
@@ -44,6 +45,30 @@ test("claude preset resolves its coordinated editor and status composition", () 
 		secondary: [],
 	});
 	assert.ok(!result.diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
+	// fork: the claude preset hands the startup screen back to Pi.
+	assert.equal(result.config.startup.mode, "off");
+});
+
+test("the claude preset leaves Pi's own startup header in place", () => {
+	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
+	const headers: unknown[] = [];
+	const host = {
+		hasUI: true,
+		mode: "tui",
+		setHeader(factory: unknown) {
+			headers.push(factory);
+		},
+	};
+	const installation = installStartup({
+		host: host as never,
+		config,
+		snapshot: { reason: "startup" },
+		generation: 1,
+	});
+
+	// No header is installed, so the header container keeps Pi's `builtInHeader`.
+	assert.equal(installation, undefined);
+	assert.deepEqual(headers, []);
 });
 
 test("doctor warns when explicit values turn a coordinated preset into a hybrid", () => {
@@ -255,7 +280,7 @@ test("native usage paints each figure with its own token, path uses muted", () =
 		// `current/window` figures carry their own `contextTokens` color.
 		assert.match(
 			rendered.right,
-			/muted<~\\dev> \| success<0%> muted<used> separator<\|> contextTokens<2\.9K\/1M>/,
+			/muted<~\\dev> \| success<0%> contextUsed<used> separator<\|> contextTokens<2\.9K\/1M>/,
 		);
 	} finally {
 		if (previousHome === undefined) delete process.env.HOME;

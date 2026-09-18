@@ -348,7 +348,7 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 				const current = snapshot.context?.currentTokens;
 				const total = snapshot.context?.windowTokens;
 				const separator = ` ${theme.apply("separator", "|")} `;
-				const used = `${theme.apply(token, `${Math.round(percent)}%`)} ${theme.apply("muted", "used")}`;
+				const used = `${theme.apply(token, `${Math.round(percent)}%`)} ${theme.apply("contextUsed", "used")}`;
 				const tokens =
 					current !== undefined && total !== undefined
 						? theme.apply("contextTokens", `${formatTokens(current)}/${formatTokens(total)}`)
