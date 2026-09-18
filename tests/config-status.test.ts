@@ -212,6 +212,53 @@ test("omp and claude presets do not inherit default secondary status items", () 
 	}
 });
 
+test("native usage paints each figure with its own token, path uses muted", () => {
+	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
+	const seen: string[] = [];
+	const recording: ResolvedTheme = {
+		...theme,
+		color: (token) => token,
+		apply: (token, text) => {
+			seen.push(token);
+			return `${token}<${text}>`;
+		},
+	};
+	const previousHome = process.env.HOME;
+	process.env.HOME = "C:\\Users\\example";
+	try {
+		const rendered = renderStatus(
+			config.statusLine.layout,
+			{
+				cwd: "C:\\Users\\example\\dev",
+				model: "m",
+				context: { currentTokens: 2_900, windowTokens: 1_000_000, percent: 0.29 },
+				usage: {
+					inputTokens: 3_100,
+					outputTokens: 131,
+					cacheReadTokens: 2_600,
+					cacheWriteTokens: 0,
+					cacheHitRate: 90.83,
+					cost: 0.001,
+					streaming: false,
+				},
+			},
+			200,
+			{ separator: config.statusLine.separator, segments: createBuiltinSegments(), theme: recording },
+		);
+
+		assert.deepEqual(
+			seen.filter((token) => token.startsWith("usage")),
+			["usageInput", "usageOutput", "usageCacheRead", "usageCacheHit", "usageCost"],
+		);
+		assert.match(rendered.left, /usageInput<↑3\.1k> usageOutput<↓131> usageCacheRead<R2\.6k> usageCacheHit<CH90\.8%> usageCost<\$0\.001>/);
+		// The directory is painted `muted`, the same token as `used | 2.9K/1M`.
+		assert.match(rendered.right, /muted<~\\dev> \| success<0%> muted<used> separator<\|> muted<2\.9K\/1M>/);
+	} finally {
+		if (previousHome === undefined) delete process.env.HOME;
+		else process.env.HOME = previousHome;
+	}
+});
+
 test("path_plain abbreviates the home directory exactly like Pi's footer", () => {
 	// Expected values are Pi's own `formatCwdForFooter` output for the same inputs.
 	const cases = [

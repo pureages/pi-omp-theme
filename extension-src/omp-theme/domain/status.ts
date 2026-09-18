@@ -242,13 +242,14 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 		// the home prefix collapsed to `~` (`~\Desktop\test\test7`). Pi reads the
 		// platform home directory (`HOME || USERPROFILE`, note `||` not `??`) at
 		// render time, so a session started with a different home still abbreviates
-		// correctly.
-		segment("path_plain", 80, ({ snapshot }) => {
+		// correctly. Painted `muted` to match the `used / window` readout it sits
+		// next to on the right.
+		segment("path_plain", 80, ({ snapshot, theme }) => {
 			const name = snapshot.cwd;
 			if (!name) return { visible: false, content: "" };
 			return {
 				visible: true,
-				content: formatCwdForFooter(name, process.env.HOME || process.env.USERPROFILE),
+				content: theme.apply("muted", formatCwdForFooter(name, process.env.HOME || process.env.USERPROFILE)),
 				truncatable: true,
 			};
 		}),
@@ -399,23 +400,32 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 		// segments this one prints the literal arrows rather than glyphs, because
 		// the point is to be indistinguishable from the built-in footer.
 		// Visibility rules and number formatting mirror pi's footer.js exactly.
+		// Each figure carries its own token so the run can be color-coded.
 		segment("native_usage", 85, ({ snapshot, theme }) => {
 			const usage = snapshot.usage;
 			if (!usage) return { visible: false, content: "" };
 			const parts: string[] = [];
-			if (usage.inputTokens) parts.push(`↑${formatUsageTokens(usage.inputTokens)}`);
-			if (usage.outputTokens) parts.push(`↓${formatUsageTokens(usage.outputTokens)}`);
-			if (usage.cacheReadTokens) parts.push(`R${formatUsageTokens(usage.cacheReadTokens)}`);
-			if (usage.cacheWriteTokens) parts.push(`W${formatUsageTokens(usage.cacheWriteTokens)}`);
+			if (usage.inputTokens) {
+				parts.push(theme.apply("usageInput", `↑${formatUsageTokens(usage.inputTokens)}`));
+			}
+			if (usage.outputTokens) {
+				parts.push(theme.apply("usageOutput", `↓${formatUsageTokens(usage.outputTokens)}`));
+			}
+			if (usage.cacheReadTokens) {
+				parts.push(theme.apply("usageCacheRead", `R${formatUsageTokens(usage.cacheReadTokens)}`));
+			}
+			if (usage.cacheWriteTokens) {
+				parts.push(theme.apply("usageCacheRead", `W${formatUsageTokens(usage.cacheWriteTokens)}`));
+			}
 			if ((usage.cacheReadTokens > 0 || usage.cacheWriteTokens > 0) && usage.cacheHitRate !== undefined) {
-				parts.push(`CH${usage.cacheHitRate.toFixed(1)}%`);
+				parts.push(theme.apply("usageCacheHit", `CH${usage.cacheHitRate.toFixed(1)}%`));
 			}
 			const subscription = usage.subscriptionMode === "subscription";
 			if ((usage.cost !== undefined && usage.cost !== 0) || subscription) {
-				parts.push(`$${(usage.cost ?? 0).toFixed(3)}${subscription ? " (sub)" : ""}`);
+				parts.push(theme.apply("usageCost", `$${(usage.cost ?? 0).toFixed(3)}${subscription ? " (sub)" : ""}`));
 			}
 			if (parts.length === 0) return { visible: false, content: "" };
-			return { visible: true, content: theme.apply("dim", parts.join(" ")), truncatable: true };
+			return { visible: true, content: parts.join(" "), truncatable: true };
 		}),
 		segment("cost", 65, ({ snapshot, theme }) => {
 			const cost = snapshot.usage?.cost;

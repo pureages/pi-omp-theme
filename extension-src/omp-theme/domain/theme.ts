@@ -34,6 +34,11 @@ export type SemanticToken =
 	| "tokens"
 	| "cache"
 	| "cost"
+	| "usageInput"
+	| "usageOutput"
+	| "usageCacheRead"
+	| "usageCacheHit"
+	| "usageCost"
 	| "time"
 	| "separator"
 	| "hint";
@@ -93,6 +98,15 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	tokens: "muted",
 	cache: "muted",
 	cost: "text",
+	// fork: the native usage cluster is painted per part (input/output/cache/hit/
+	// cost). Pi's own footer dims the whole run, so these have no theme-token
+	// equivalent; override them per token under `theme.colors` if the defaults
+	// clash with a light background.
+	usageInput: "#ff5c57",
+	usageOutput: "#ff9f43",
+	usageCacheRead: "#e8c547",
+	usageCacheHit: "#3ed6d6",
+	usageCost: "#b48ce0",
 	time: "muted",
 	separator: "dim",
 	hint: "#8a8a8a",
