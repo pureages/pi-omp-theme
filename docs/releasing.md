@@ -1,5 +1,13 @@
 # Releasing pi-omp-theme
 
+> **This document is upstream's release process and does not apply to this fork.**
+> The fork ships through `pi install git:github.com/pureages/pi-omp-theme` only: it
+> does not publish to npm (the package name belongs to upstream), it drops the
+> `pi-package` keyword so it stays off `pi.dev/packages`, and it carries no
+> `publishConfig`, `prepack` hook or `pi.image` gallery preview. Released fork
+> builds are tagged `1.1.0-fork.N` in `CHANGELOG.md`; publishing is not part of
+> the workflow. Kept verbatim for reference on how upstream cuts a release.
+
 `pi.dev/packages` is an npm-backed catalog, not a second package registry. A public npm package is discovered automatically when its npm metadata contains the `pi-package` keyword. There is no manual upload form.
 
 This repository intentionally uses a manual release process and does not run GitHub Actions.

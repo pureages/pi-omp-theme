@@ -105,7 +105,7 @@ npm run build               # 一次性构建
 npm test                    # 76 个用例（tsc 编译后跑 node:test）
 npm run typecheck           # tsc --noEmit
 npm run depcruise           # 分层依赖检查
-npm run check               # 上面全部 + build + package:smoke（prepack 也跑这个）
+npm run check               # 上面全部 + build + package:smoke
 ```
 
 改完源码后：

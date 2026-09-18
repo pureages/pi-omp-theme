@@ -23,10 +23,15 @@ assert.equal(manifest.bugs?.url, expected.bugs);
 // The fork versions itself on its own line (`1.0.12` upstream -> `1.1.0-fork.N`),
 // so the version must never silently fall back to a bare upstream release.
 assert.ok(manifest.version.includes("-fork."), "the fork keeps its own version line");
-assert.equal(manifest.publishConfig?.access, "public");
-assert.equal(manifest.publishConfig?.registry, "https://registry.npmjs.org/");
 assert.equal(manifest.engines?.node, ">=22.19.0");
-assert.ok(manifest.keywords?.includes("pi-package"), "package must remain discoverable on pi.dev/packages");
+// fork: not published to npm (the package name belongs to upstream) and not
+// listed on pi.dev/packages. Keep the repository out of both registries.
+assert.equal(manifest.publishConfig, undefined, "the fork does not publish to npm");
+assert.equal(manifest.scripts?.prepack, undefined, "the fork runs no publish-time gate");
+assert.ok(
+  !manifest.keywords?.includes("pi-package"),
+  "the fork is not advertised on pi.dev/packages",
+);
 assert.deepEqual(manifest.pi?.extensions, [expected.entry]);
 assert.deepEqual(manifest.pi?.themes, ["./themes"]);
 // fork: no gallery preview. The fork has no screenshots in-tree, and upstream's

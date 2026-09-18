@@ -14,7 +14,6 @@
     "url": "https://github.com/pureages/pi-omp-theme/issues"
   },
   "keywords": [
-    "pi-package",
     "pi",
     "pi-extension",
     "pi-theme",
@@ -49,8 +48,7 @@
     "build": "tsup",
     "package:smoke": "node scripts/package-smoke.mjs",
     "dev": "tsup --watch",
-    "check": "npm run typecheck && npm test && npm run depcruise && npm run build && npm run package:smoke",
-    "prepack": "npm run check"
+    "check": "npm run typecheck && npm test && npm run depcruise && npm run build && npm run package:smoke"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
@@ -70,9 +68,5 @@
   },
   "overrides": {
     "esbuild": "^0.28.1"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }
