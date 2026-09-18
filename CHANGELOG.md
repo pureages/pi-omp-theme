@@ -4,6 +4,33 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.1.0-fork.1] - 2026-09-19
+
+Fork line. Everything below this entry is upstream history, kept verbatim. The fork
+re-bases its own version on the upstream release it last merged (`1.0.12`), so a
+`-fork.N` suffix marks every build this repository produces.
+
+### Added
+
+- `native_usage` status segment: Pi's own footer cluster (`↑13k ↓14k R225k CH98.8% $0.011`) with Pi's exact number formatting and visibility rules. `CH` reports the cache hit rate of the most recent assistant turn, not the session-wide ratio.
+- `path_plain` status segment: the working directory the way Pi's footer prints it — no icon, home directory collapsed to `~`, platform separator preserved (`~\Desktop\test\test7`). A faithful port of Pi's `formatCwdForFooter`, verified case by case against the original.
+- `context_used` status segment: `11% used | 111.4K/1M`, the context readout without the bracket gauge.
+- `usageInput`, `usageOutput`, `usageCacheRead`, `usageCacheHit`, `usageCost`, `contextTokens` and `contextUsed` color tokens, each overridable under `theme.colors`.
+
+### Changed
+
+- The `claude` preset status line is now `[model_effort, native_usage]` on the left and `[path_plain, context_used]` on the right.
+- `statusLine.bottomMargin` defaults to `0` (was `1`), so the status row sits flush against the terminal's last line instead of leaving a blank row underneath.
+- The status renderer joins the left and right groups with padding alone; a separator there used to be left dangling in front of the gap.
+- Per-figure colors for the usage cluster: `↑` red, `↓` orange, `R`/`W` yellow, `CH` Pi's `success` green, `$` cyan; the model name is purple and the directory matches the `used` readout.
+- The `claude` preset keeps Pi's built-in startup header (`startup.mode: "off"`) instead of installing the theme's welcome card.
+- Package metadata (`repository`, `homepage`, `bugs`) points at this fork.
+- `dist/` is committed, so the repository installs as a git source without a build step.
+
+### Removed
+
+- The gallery screenshots under `media/` and the `pi.image` manifest field they fed.
+
 ## [1.0.12] - 2026-09-12
 
 ### Fixed

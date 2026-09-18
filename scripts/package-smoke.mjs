@@ -10,11 +10,19 @@ const expected = {
   name: "@nguyenquangthai/pi-omp-theme",
   version: manifest.version,
   entry: "./dist/extensions/pi-omp-theme.ts",
-  repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
+  // fork: the metadata points at the fork, not at upstream.
+  repository: "git+https://github.com/pureages/pi-omp-theme.git",
+  homepage: "https://github.com/pureages/pi-omp-theme#readme",
+  bugs: "https://github.com/pureages/pi-omp-theme/issues",
 };
 assert.equal(manifest.name, expected.name);
 assert.equal(manifest.version, expected.version);
 assert.equal(manifest.repository?.url, expected.repository);
+assert.equal(manifest.homepage, expected.homepage);
+assert.equal(manifest.bugs?.url, expected.bugs);
+// The fork versions itself on its own line (`1.0.12` upstream -> `1.1.0-fork.N`),
+// so the version must never silently fall back to a bare upstream release.
+assert.ok(manifest.version.includes("-fork."), "the fork keeps its own version line");
 assert.equal(manifest.publishConfig?.access, "public");
 assert.equal(manifest.publishConfig?.registry, "https://registry.npmjs.org/");
 assert.equal(manifest.engines?.node, ">=22.19.0");

@@ -6,6 +6,8 @@
 这个 fork 只动了**底部状态栏**和**启动画面**两处表现，其余部分（编辑器外框、工具输出框、消息渲染、
 Titanium 主题色板、各种配置项）与上游完全一致。上游的说明和更新请见原仓库。
 
+- 版本线：`1.1.0-fork.N`。上游最后合并的是 `1.0.12`，后续 fork 改动都带 `-fork.N` 后缀，
+  和上游发布区分开。改动明细见 [CHANGELOG.md](CHANGELOG.md)。
 - 运行时：Node.js ≥ 22.19，pi ≥ 0.83（每次渲染都会探测运行时接口，认不出来就回退官方原生渲染）
 
 ## 安装
@@ -131,4 +133,6 @@ pi update --extensions      # 让本机装的那份（~/.pi/agent/git/...）跟�
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。上游版权归 QuangThai；本 fork 的修改同样以 MIT 发布。
-改动记录见 [CHANGELOG.md](CHANGELOG.md)（只到上游 `v1.0.12`）与 git log。
+
+改动记录见 [CHANGELOG.md](CHANGELOG.md)：最上面是 fork 自己的版本线
+（`1.1.0-fork.1`，基于最后合并的上游版本 `1.0.12`），下面全是上游历史，原样保留。
