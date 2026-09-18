@@ -36,11 +36,11 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 	// other two, which is not the layout the preset promises.
 	//
 	// fork: the path segment and the context gauge are replaced by Pi's native
-	// footer usage cluster on the left, with the `used / window` readout keeping
-	// the right edge.
+	// footer usage cluster on the left; the right edge carries the working
+	// directory followed by the `used / window` readout.
 	claude: Object.freeze({
 		left: ["model_effort", "native_usage"],
-		right: ["context_used"],
+		right: ["path", "context_used"],
 		secondary: [],
 	}),
 });
