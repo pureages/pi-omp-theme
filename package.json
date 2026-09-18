@@ -33,8 +33,7 @@
     ],
     "themes": [
       "./themes"
-    ],
-    "image": "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-2"
+    ]
   },
   "files": [
     "dist/**/*.ts",

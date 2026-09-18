@@ -1,203 +1,134 @@
-# @nguyenquangthai/pi-omp-theme
+# pi-omp-theme（pureages fork）
 
-[![npm](https://img.shields.io/npm/v/@nguyenquangthai/pi-omp-theme)](https://www.npmjs.com/package/@nguyenquangthai/pi-omp-theme)
-[![license](https://img.shields.io/npm/l/@nguyenquangthai/pi-omp-theme)](LICENSE)
+给 [pi](https://github.com/earendil-works/pi) 用的主题 + TUI 呈现扩展。这是
+[QuangThai/pi-omp-theme](https://github.com/QuangThai/pi-omp-theme)（MIT）的**个人 fork**。
 
-An OMP-inspired visual theme and TUI presentation extension for [Pi](https://pi.dev). It combines Titanium dark/light themes with a coordinated startup view, status line, editor, messages, and tool rendering.
+这个 fork 只动了**底部状态栏**和**启动画面**两处表现，其余部分（编辑器外框、工具输出框、消息渲染、
+Titanium 主题色板、各种配置项）与上游完全一致。上游的说明和更新请见原仓库。
 
-![pi-omp-theme surface gallery](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-2)
+- 运行时：Node.js ≥ 22.19，pi ≥ 0.83（每次渲染都会探测运行时接口，认不出来就回退官方原生渲染）
 
-## Surface gallery
+## 安装
 
-The gallery is more than a logo preview: it shows the surfaces people see in a real Pi session. These representative Pi 0.84.2 captures use the Titanium dark theme, Unicode glyphs, a 120-column terminal, and sample local project data. Click any thumbnail for the full-size image.
+```bash
+pi install git:github.com/pureages/pi-omp-theme
+```
 
-| Surface | What it demonstrates | Full-size preview |
+**`dist/` 是提交进版本库的构建产物**，所以 git 源开箱即用，目标机器不需要 node 工具链：
+
+- `pi install git:...` 只做 `git clone` + `npm install --omit=dev`（没有任何依赖，不会装 node_modules），
+  而 `pi.extensions` 指向的 `dist/extensions/pi-omp-theme.ts` 已经在仓库里；
+- `pi update --extensions` 更新前会执行 `git clean -fdx`，未跟踪的构建产物会被删掉，所以必须入库。
+
+因此**改完源码要重新构建并提交 `dist/`**，否则别人（以及别的机器）装到的还是旧产物。见下方「本地开发」。
+
+装好后在 pi 里用 `/reload`，或直接开新会话。主题名是 `titanium`（暗）/ `titanium-light`（亮）。
+
+## 这个 fork 改了什么
+
+### 状态栏
+
+底部那一行左边是「模型 + 原生用量」，右边是「目录 + 上下文占用」：
+
+```
+⬢ deepseek-v4.1-flash · ◒ high | ↑3.1k ↓15 R2.6k CH90.9% $0.000        ~\Desktop\test\test7 | 0% used | 2.8K/1M
+└────────────────── 靠左（左对齐）──────────────────┘                    └──────────── 靠右（右对齐）────────────┘
+```
+
+| 项目 | 上游 | 本 fork |
 |---|---|---|
-| **Welcome** | Startup resources, tool providers, and recent sessions | [open `welcome.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png) |
-| **Read** | Quiet, single-line file reads with a readable path | [open `read.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png) |
-| **List** | Bounded directory output rendered as a tree | [open `list.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png) |
-| **Grep** | Match counts, file grouping, context, and truncation | [open `grep.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png) |
-| **Tool call** | Boxed command, response, exit status, and elapsed time | [open `tool-call.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png) |
-| **Status line** | Model, effort, path, Git state, and context usage | [open `status-line.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png) |
+| 布局 | 左 `[model_effort, path, git, claude_context]`，右 `[]` | 左 `[model_effort, native_usage]`，右 `[path_plain, context_used]` |
+| 用量 | 只有一个 `💲0.001` | 新增 `native_usage`，逐项照抄官方 footer：`↑in ↓out RcacheRead WcacheWrite CHhit% $cost` |
+| 目录 | `📁` + 完整路径 | 新增 `path_plain`：**无图标**，家目录缩成 `~`，保留平台分隔符（`~\Desktop\test\test7`） |
+| 上下文 | `[██████░░░░] │ 11% used │ 111.4K/1M`（带进度条） | 新增 `context_used`：去掉进度条，只留 `11% used │ 111.4K/1M` |
+| 状态行下方 | 特意留 1 行空白（`bottomMargin: 1`） | `bottomMargin: 0`，紧贴终端最后一行 |
+| 左右分组之间 | 会多印一个分隔符 | 只用空格分隔（官方 footer 也是纯空格） |
+| 启动画面 | 自己的欢迎卡（logo / Welcome back! / Tips / Tool providers / Recent sessions） | `startup.mode: "off"`，交回官方 pi 的 `builtInHeader` |
 
-<table>
-  <tr>
-    <td width="50%"><strong>Welcome</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png" alt="Welcome screen with resources, providers, and recent sessions" width="100%"></a></td>
-    <td width="50%"><strong>Read</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png" alt="Compact read tool surface" width="100%"></a></td>
-  </tr>
-  <tr>
-    <td><strong>List</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png" alt="List tool rendered as a bounded tree" width="100%"></a></td>
-    <td><strong>Grep</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png" alt="Grep results grouped by file with match context" width="100%"></a></td>
-  </tr>
-  <tr>
-    <td><strong>Tool call</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png" alt="Boxed tool call with output, exit status, and elapsed time" width="100%"></a></td>
-    <td><strong>Status line</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png" alt="Responsive status line with model, Git, and context usage" width="100%"></a></td>
-  </tr>
-</table>
+两个关键实现都是**照抄官方 pi 的源码**，不是凭感觉写的：
 
-Install it in Pi with one command:
+- `native_usage` 的显示规则、数字格式（`999` / `1.3k` / `13k` / `2.3M`，小写 k）逐条对应官方
+  `FooterComponent`；`CH` 取的是**最近一次 assistant 回合**的命中率，不是全会话平均。
+- `formatCwdForFooter()` 是从官方 `modes/interactive/components/footer.ts` 原样搬过来的副本
+  （`resolve` + `relative` + `isAbsolute` + 平台分隔符，`HOME || USERPROFILE`），已经和官方实现做过
+  逐用例对照验证。
 
-```bash
-pi install npm:@nguyenquangthai/pi-omp-theme
-```
+### 配色
 
-## Features
+| 位置 | 内容 | 语义 token | 默认值 |
+|---|---|---|---|
+| 左 | `⬢ 模型名` | `model` | 🟣 `#b48ce0` |
+| 左 | `↑3.1k` | `usageInput` | 🔴 `#ff5c57` |
+| 左 | `↓15` | `usageOutput` | 🟠 `#ff9f43` |
+| 左 | `R2.6k` / `W…` | `usageCacheRead` | 🟡 `#e8c547` |
+| 左 | `CH90.9%` | `usageCacheHit` | 🟢 `success`（跟随 pi 主题） |
+| 左 | `$0.000` | `usageCost` | 🩵 `#3ed6d6` |
+| 右 | `~\Desktop\test\test7` | `muted` | 跟随 pi 主题 |
+| 右 | `0%` | `contextLow` / `contextMedium` / `contextHigh` / `contextCritical` | 随占用率变 |
+| 右 | `used` | `contextUsed` | 🟠 `#ff9f43` |
+| 右 | `2.8K/1M` | `contextTokens` | 🩵 `#3ed6d6` |
 
-- Claude-style and OMP-style editor/status compositions.
-- Responsive status segments for model, effort, path, Git, context, usage, cost, time, and session state.
-- Compact startup header or optional welcome card.
-- Boxed tool rendering, quiet-call batching, adaptive diffs, elapsed time, and completed-turn summaries.
-- Optional message/tool compatibility patches with per-surface identity checks and native fallback.
-- Titanium dark/light themes, Nerd Font/Unicode/ASCII modes, shimmer, syntax-highlight caching, and session accents.
-
-## Requirements
-
-- Node.js 22.19 or newer.
-- Pi 0.83.x or newer. Compatibility patches are probed against the live Pi runtime per surface; Pi version numbers are diagnostic only, so unrelated releases keep the themed TUI when the patched method contracts remain unchanged. Unrecognized contracts fall back to Pi's native rendering.
-
-## Install
-
-Use Pi's package manager so the extension and themes are registered correctly:
-
-```bash
-pi install npm:@nguyenquangthai/pi-omp-theme
-```
-
-Running `npm install` alone downloads the package but does not register it with Pi.
-
-### Verify installation
-
-```bash
-pi list
-pi -p "/pi-omp-theme doctor"
-```
-
-`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor summary reports the active preset, Pi compatibility identity, surface fallbacks, and host binding; `Host binding` should read `bound`. Use `/pi-omp-theme doctor json` when you need the complete field-level payload.
-
-### Install from a local checkout
-
-```bash
-npm ci && npm run build
-pi install /path/to/pi-omp-theme
-```
-
-The compiled entry is `dist/extensions/pi-omp-theme.ts` on purpose. Pi loads extensions through jiti, which applies the host aliases (`@earendil-works/*` → the running Pi's own modules) while loading the `.ts` entry. A `.js` entry next to a checkout's `node_modules/@earendil-works/pi-coding-agent` can bind the extension to a second copy of Pi and make message/tool decoration silently miss the TUI. Pi 0.84.3+ runs its Node CLI/RPC entrypoints from a bundled runtime and exposes those host modules virtually; the package detects that loader path instead of comparing it with the modular package entry. If the doctor ever reports `hostBinding.status: "foreign"`, the extension was loaded outside Pi's loader; reinstall with `pi install npm:@nguyenquangthai/pi-omp-theme` or rebuild the checkout.
-
-The first launch after a rebuild transpiles the bundle once (a few seconds); jiti caches the result for later launches.
-
-### Update
-
-```bash
-pi update npm:@nguyenquangthai/pi-omp-theme
-# Or update every installed Pi package:
-pi update --extensions
-```
-
-Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.3` remain pinned until explicitly changed.
-
-### Uninstall
-
-```bash
-pi remove npm:@nguyenquangthai/pi-omp-theme
-```
-
-## Defaults
-
-The shipped configuration uses the `claude` preset with a dock editor, a status row below the editor, compact startup presentation, boxed tools, completed-turn summaries, and the `titanium` theme. Core compatibility patches remain disabled unless explicitly enabled.
-
-## Presets
-
-`claude`, `omp`, `default`, `minimal`, `compact`, `full`, `ascii`, and `native`.
-
-## Configuration
-
-Use the `piOmpTheme` key in Pi's global or trusted project `settings.json`:
+`usageCacheHit` 用的是 pi 主题自己的 `success`，所以换 `titanium-light` 时会自动跟着变绿；其余是固定
+hex，pi 主题里没有对应的语义色。想改颜色不用动代码，在 `~/.pi/agent/settings.json` 里覆盖即可：
 
 ```json
 {
   "piOmpTheme": {
-    "preset": "claude",
     "theme": {
-      "autoApply": "titanium"
-    },
-    "compatibility": {
-      "allowCorePatches": false
+      "colors": {
+        "model": "#c792ea",
+        "usageInput": "#ff6b6b"
+      }
     }
   }
 }
 ```
 
-Presets coordinate status placement, editor style/frame, separator, and status layout. Keep those fields omitted when you want the preset's complete composition; for example, changing only `preset` to `"omp"` selects the rounded border layout. Explicit values still win, but `/pi-omp-theme doctor` warns when they contradict coordinated preset fields and produce a hybrid UI.
+`/pi-omp-theme` 命令可以在 TUI 里交互式改这些配置。
 
-Precedence:
+### 关于预设
 
-```text
-defaults < global settings < trusted project settings < environment < session override
-```
+上游的预设（`default` / `minimal` / `compact` / `full` / `ascii` / `native` / `claude` / `omp`）都还在，
+默认预设是 `claude`，上面这些改动就落在 `claude` 预设上（`domain/config-presets.ts` 和
+`domain/status-presets.ts` 里标了 `fork:` 注释的地方）。`native_usage` / `path_plain` / `context_used`
+是新增的段，上游原有的 `path`（带 `📁`）、`claude_context`（带进度条）等段都**原样保留**，
+想要回原来的样子，改一下预设的 layout 就行。
 
-Invalid values fall back safely and appear in `/pi-omp-theme doctor`.
-
-### Environment variables
-
-| Variable | Purpose |
-|---|---|
-| `PI_OMP_THEME_DISABLED=1` | Disable the extension. |
-| `PI_OMP_THEME_NERD_FONTS=1\|0` | Force Nerd Font or non-Nerd glyphs. |
-| `PI_OMP_THEME_EDITOR=native\|compact\|boxed\|dock` | Override editor style. |
-| `PI_OMP_THEME_STATUS=above\|below\|off` | Override status placement/state. |
-| `PI_OMP_THEME_THEME=<name\|off>` | Select or disable automatic theme application. |
-| `PI_OMP_THEME_OSC11=1\|0` | Override terminal background synchronization. |
-| `PI_OMP_THEME_DEBUG=1` | Enable bounded diagnostics. |
-
-### CLI flags
-
-```text
---pi-omp-theme-core-patches
---pi-omp-theme-message-assistant
---pi-omp-theme-message-special-blocks
---pi-omp-theme-tools
---pi-omp-theme-readonly-tools
---pi-omp-theme-ascii
-```
-
-### Commands
-
-| Command | Purpose |
-|---|---|
-| `/pi-omp-theme` | Show active preset and surface state. |
-| `/pi-omp-theme on\|off` | Toggle the extension for the current session. |
-| `/pi-omp-theme preset <name>` | Apply a preset. |
-| `/pi-omp-theme placement above\|below\|border` | Change status placement. |
-| `/pi-omp-theme editor <style> [frame]` | Change editor presentation. |
-| `/pi-omp-theme startup off\|compact\|overlay` | Change startup presentation. |
-| `/pi-omp-theme surface <name> on\|off` | Toggle a surface. |
-| `/pi-omp-theme set <path> <JSON>` | Set a validated configuration leaf. |
-| `/pi-omp-theme persist global\|project set <path> <JSON>` | Persist a validated setting. |
-| `/pi-omp-theme reload` | Reload configuration and affected surfaces. |
-| `/pi-omp-theme doctor` | Show a compact, human-readable health report. |
-| `/pi-omp-theme doctor json` | Show the complete machine-readable diagnostic payload. |
-
-## Privacy and security
-
-Pi extensions execute with the user's system permissions. Review the source before installation.
-
-The extension does not implement telemetry. The optional welcome presentation reads bounded local Pi metadata; its recent-session list can derive a short display title from the opening request in local session files. That data is rendered locally and is not transmitted by this package.
-
-## Development
+## 本地开发
 
 ```bash
-npm ci
-npm run typecheck
-npm run depcruise
-npm run build
-npm run package:smoke
-npm run check
+npm install                 # 装 devDependencies（tsup / typescript / tsc 测试链）
+npm run dev                 # tsup --watch，改完源码自动重建 dist/
+npm run build               # 一次性构建
+npm test                    # 76 个用例（tsc 编译后跑 node:test）
+npm run typecheck           # tsc --noEmit
+npm run depcruise           # 分层依赖检查
+npm run check               # 上面全部 + build + package:smoke（prepack 也跑这个）
 ```
 
-`npm run check` is also enforced by the npm `prepack` hook.
+改完源码后：
 
-Releases are published manually to avoid CI billing. The complete maintainer checklist is documented in the [release guide](https://github.com/QuangThai/pi-omp-theme/blob/main/docs/releasing.md).
+```bash
+npm run build && git add dist && git commit -m "..." && git push
+pi update --extensions      # 让本机装的那份（~/.pi/agent/git/...）跟上
+# 或者用本地路径开发：pi install C:/path/to/pi-omp-theme，改完 /reload 立即生效
+```
 
-## License
+源码在 `extension-src/omp-theme/`，分层是 `shared/ → domain/ → features/ → app/ → pi/`，
+依赖方向由 `dependency-cruiser.config.cjs` 强制：
 
-[MIT](LICENSE). Required notices from incorporated MIT-licensed sources are retained.
+| 目录 | 职责 |
+|---|---|
+| `shared/` | 无状态工具：ANSI 宽度、盒子绘制、路径处理、diff |
+| `domain/` | 纯逻辑：状态栏渲染与配色（`status.ts`、`status-renderer.ts`、`theme.ts`）、配置解析 |
+| `features/` | 具体界面：`startup/`（启动头）、`status-line/`、`editor/`、`messages/`、`tools/` |
+| `app/` | 装配与运行时（快照、命令、配置存储） |
+| `pi/` | 唯一接触 pi API 的一层（生命周期、兼容性补丁、会话用量） |
+
+其他文件：`themes/` 两个主题 JSON、`tests/` 测试（`node scripts/run-tests.mjs`）、
+`scripts/package-smoke.mjs` 打包/加载冒烟检查、`docs/releasing.md` 上游的发布流程（本 fork 不发布到 npm）。
+
+## 许可
+
+MIT，见 [LICENSE](LICENSE)。上游版权归 QuangThai；本 fork 的修改同样以 MIT 发布。
+改动记录见 [CHANGELOG.md](CHANGELOG.md)（只到上游 `v1.0.12`）与 git log。
