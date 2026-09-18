@@ -288,7 +288,7 @@ test("native usage paints each figure with its own token, path uses muted", () =
 	}
 });
 
-test("the model name is painted green and the context figures cyan", () => {
+test("the model name is purple, cache hits green and cost cyan", () => {
 	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
 	const seen: string[] = [];
 	const recording: ResolvedTheme = {
@@ -310,18 +310,16 @@ test("the model name is painted green and the context figures cyan", () => {
 		{ separator: config.statusLine.separator, segments: createBuiltinSegments(), theme: recording },
 	);
 
-	// `model` resolves to Pi's `success` (the theme's green).
 	assert.match(rendered.left, /^\s*model< deepseek-v4\.1-flash> separator<·> thinkingHigh<◒ high>/);
 	assert.match(rendered.right, /contextTokens<3\.3K\/1M>/);
 
-	// The token really is green through Pi's own theme: `success` on titanium.
-	const greenish = resolveTheme(
-		{ colors: {}, fg: (color, text) => `${color}|${text}` },
-		config,
-		{},
-	);
-	assert.equal(greenish.color("model"), "success|");
-	assert.equal(greenish.color("contextTokens"), hexToAnsiPrefix("#3ed6d6"));
+	// `model` is a fixed purple; `usageCacheHit` rides Pi's own `success`, which
+	// is green on every Pi theme; `usageCost` shares the cyan with `contextTokens`.
+	const resolved = resolveTheme({ colors: {}, fg: (color, text) => `${color}|${text}` }, config, {});
+	assert.equal(resolved.color("model"), hexToAnsiPrefix("#b48ce0"));
+	assert.equal(resolved.color("usageCacheHit"), "success|");
+	assert.equal(resolved.color("usageCost"), hexToAnsiPrefix("#3ed6d6"));
+	assert.equal(resolved.color("contextTokens"), hexToAnsiPrefix("#3ed6d6"));
 	assert.ok(seen.length > 0);
 });
 

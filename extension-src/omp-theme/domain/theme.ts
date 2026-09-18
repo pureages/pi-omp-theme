@@ -82,7 +82,9 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	success: "success",
 	warning: "warning",
 	error: "error",
-	model: "success",
+	// fork: the model name (and its `⬢` glyph) is purple rather than the theme's
+	// accent blue.
+	model: "#b48ce0",
 	thinking: "thinkingOff",
 	thinkingMinimal: "thinkingMinimal",
 	thinkingLow: "thinkingLow",
@@ -102,13 +104,14 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	cost: "text",
 	// fork: the native usage cluster is painted per part (input/output/cache/hit/
 	// cost). Pi's own footer dims the whole run, so these have no theme-token
-	// equivalent; override them per token under `theme.colors` if the defaults
-	// clash with a light background.
+	// equivalent; only the cache hit rate rides a Pi theme color (`success`),
+	// which keeps it green on every theme. Override any of them per token under
+	// `theme.colors` if the fixed hexes clash with a light background.
 	usageInput: "#ff5c57",
 	usageOutput: "#ff9f43",
 	usageCacheRead: "#e8c547",
-	usageCacheHit: "#3ed6d6",
-	usageCost: "#b48ce0",
+	usageCacheHit: "success",
+	usageCost: "#3ed6d6",
 	// fork: the `current/window` half of the right-hand context readout. Its own
 	// token rather than `muted` so it can be recolored without touching the
 	// directory text next to it.
