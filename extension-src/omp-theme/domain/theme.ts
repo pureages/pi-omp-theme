@@ -39,6 +39,7 @@ export type SemanticToken =
 	| "usageCacheRead"
 	| "usageCacheHit"
 	| "usageCost"
+	| "contextTokens"
 	| "time"
 	| "separator"
 	| "hint";
@@ -80,7 +81,7 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	success: "success",
 	warning: "warning",
 	error: "error",
-	model: "accent",
+	model: "success",
 	thinking: "thinkingOff",
 	thinkingMinimal: "thinkingMinimal",
 	thinkingLow: "thinkingLow",
@@ -107,6 +108,10 @@ const SEMANTIC_COLORS: Record<SemanticToken, string> = {
 	usageCacheRead: "#e8c547",
 	usageCacheHit: "#3ed6d6",
 	usageCost: "#b48ce0",
+	// fork: the `current/window` half of the right-hand context readout. Its own
+	// token rather than `muted` so it can be recolored without touching the
+	// directory text next to it.
+	contextTokens: "#3ed6d6",
 	time: "muted",
 	separator: "dim",
 	hint: "#8a8a8a",

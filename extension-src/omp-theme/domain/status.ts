@@ -351,7 +351,7 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 				const used = `${theme.apply(token, `${Math.round(percent)}%`)} ${theme.apply("muted", "used")}`;
 				const tokens =
 					current !== undefined && total !== undefined
-						? theme.apply("muted", `${formatTokens(current)}/${formatTokens(total)}`)
+						? theme.apply("contextTokens", `${formatTokens(current)}/${formatTokens(total)}`)
 						: "";
 				return {
 					visible: true,

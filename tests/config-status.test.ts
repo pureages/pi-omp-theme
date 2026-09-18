@@ -4,7 +4,7 @@ import { createDoctor } from "../extension-src/omp-theme/app/doctor.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
 import { renderStatus } from "../extension-src/omp-theme/domain/status-renderer.js";
 import { createBuiltinSegments, formatCwdForFooter, type StatusSnapshot, type UsageSnapshot } from "../extension-src/omp-theme/domain/status.js";
-import type { ResolvedTheme } from "../extension-src/omp-theme/domain/theme.js";
+import { hexToAnsiPrefix, resolveTheme, type ResolvedTheme } from "../extension-src/omp-theme/domain/theme.js";
 
 const theme: ResolvedTheme = {
 	color: () => "",
@@ -251,12 +251,53 @@ test("native usage paints each figure with its own token, path uses muted", () =
 			["usageInput", "usageOutput", "usageCacheRead", "usageCacheHit", "usageCost"],
 		);
 		assert.match(rendered.left, /usageInput<↑3\.1k> usageOutput<↓131> usageCacheRead<R2\.6k> usageCacheHit<CH90\.8%> usageCost<\$0\.001>/);
-		// The directory is painted `muted`, the same token as `used | 2.9K/1M`.
-		assert.match(rendered.right, /muted<~\\dev> \| success<0%> muted<used> separator<\|> muted<2\.9K\/1M>/);
+		// The directory is painted `muted`, the same token as `used` next to it; the
+		// `current/window` figures carry their own `contextTokens` color.
+		assert.match(
+			rendered.right,
+			/muted<~\\dev> \| success<0%> muted<used> separator<\|> contextTokens<2\.9K\/1M>/,
+		);
 	} finally {
 		if (previousHome === undefined) delete process.env.HOME;
 		else process.env.HOME = previousHome;
 	}
+});
+
+test("the model name is painted green and the context figures cyan", () => {
+	const { config } = resolveConfigDetailed({ global: { preset: "claude" } });
+	const seen: string[] = [];
+	const recording: ResolvedTheme = {
+		...theme,
+		color: (token) => token,
+		apply: (token, text) => {
+			seen.push(token);
+			return `${token}<${text}>`;
+		},
+	};
+	const rendered = renderStatus(
+		config.statusLine.layout,
+		{
+			model: "deepseek-v4.1-flash",
+			thinkingLevel: "high",
+			context: { currentTokens: 3_300, windowTokens: 1_000_000, percent: 0.33 },
+		},
+		200,
+		{ separator: config.statusLine.separator, segments: createBuiltinSegments(), theme: recording },
+	);
+
+	// `model` resolves to Pi's `success` (the theme's green).
+	assert.match(rendered.left, /^\s*model< deepseek-v4\.1-flash> separator<·> thinkingHigh<◒ high>/);
+	assert.match(rendered.right, /contextTokens<3\.3K\/1M>/);
+
+	// The token really is green through Pi's own theme: `success` on titanium.
+	const greenish = resolveTheme(
+		{ colors: {}, fg: (color, text) => `${color}|${text}` },
+		config,
+		{},
+	);
+	assert.equal(greenish.color("model"), "success|");
+	assert.equal(greenish.color("contextTokens"), hexToAnsiPrefix("#3ed6d6"));
+	assert.ok(seen.length > 0);
 });
 
 test("path_plain abbreviates the home directory exactly like Pi's footer", () => {
