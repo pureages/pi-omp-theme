@@ -12,17 +12,80 @@ Titanium 主题色板、各种配置项）与上游完全一致。上游的说�
 
 ## 安装
 
+两种方式任选一种，都**不需要 node 工具链**：`dist/` 是提交进版本库的构建产物，拉下来就能跑。
+装好后在 pi 里 `/reload`（或直接开新会话），主题名是 `titanium`（暗）/ `titanium-light`（亮）。
+
+### 方式 A：机器上有 git（推荐，能一键更新）
+
 ```bash
 pi install git:github.com/pureages/pi-omp-theme
 ```
 
-**`dist/` 是提交进版本库的构建产物**，所以 git 源开箱即用，目标机器不需要 node 工具链：
+没装 git 就先装一个：
 
-- `pi install git:...` 只做 `git clone` + `npm install --omit=dev`（没有任何依赖，不会装 node_modules），
-  而 `pi.extensions` 指向的 `dist/extensions/pi-omp-theme.ts` 已经在仓库里；
-- `pi update --extensions` 更新前会执行 `git clean -fdx`，未跟踪的构建产物会被删掉，所以必须入库。
+```powershell
+winget install --id Git.Git -e --source winget   # Windows（装完要开新终端，PATH 才会刷新）
+```
 
-因此**改完源码要重新构建并提交 `dist/`**，否则别人（以及别的机器）装到的还是旧产物。见下方「本地开发」。
+```bash
+brew install git          # macOS
+sudo apt install git      # Debian / Ubuntu
+sudo dnf install git      # Fedora
+```
+
+以后更新一条命令搞定：
+
+```bash
+pi update --extensions
+```
+
+### 方式 B：没有 git、也不想装 git → 下载 ZIP + 本地路径安装
+
+pi 的 local 源安装**只认一个路径**：不调用 git、不调用 npm、也不复制文件，所以下载解压到固定位置就行。
+
+**Windows（PowerShell，一行一行复制执行）：**
+
+```powershell
+# 1) 下载最新 main 的 ZIP
+Invoke-WebRequest -Uri "https://github.com/pureages/pi-omp-theme/archive/refs/heads/main.zip" -OutFile "$env:TEMP\pi-omp-theme.zip"
+
+# 2) 解压到家目录并改名成 pi-omp-theme（先删旧目录，方便原地重新下载更新）
+Remove-Item -Recurse -Force "$HOME\pi-omp-theme" -ErrorAction SilentlyContinue
+Expand-Archive -Path "$env:TEMP\pi-omp-theme.zip" -DestinationPath $HOME -Force
+Move-Item "$HOME\pi-omp-theme-main" "$HOME\pi-omp-theme"
+
+# 3) 安装
+pi install "$HOME\pi-omp-theme"
+```
+
+**macOS / Linux（bash）：**
+
+```bash
+# 1)+2) 下载 tar.gz，解压到家目录并改名成 pi-omp-theme
+curl -L -o /tmp/pi-omp-theme.tar.gz https://github.com/pureages/pi-omp-theme/archive/refs/heads/main.tar.gz
+rm -rf ~/pi-omp-theme && tar -xzf /tmp/pi-omp-theme.tar.gz -C ~ && mv ~/pi-omp-theme-main ~/pi-omp-theme
+
+# 3) 安装
+pi install ~/pi-omp-theme
+```
+
+更新：把上面 1~3 步重跑一遍，然后 `/reload`。（ZIP 里没有 `.git`，所以 `pi update --extensions` 管不到它。）
+
+不习惯命令行也可以在仓库页面点 **`Code` → `Download ZIP`** 手动下载。
+
+**注意事项**
+
+- 解压位置定下来就**别再挪动或改名**，否则 pi 会报 `Path does not exist`。
+- `pi install` 有时会把路径写成相对 `~/.pi/agent/settings.json` 的形式（例如 `..\..\foo\pi-omp-theme`），
+  能用但难读。想干净就手动写绝对路径（JSON 里用正斜杠，Windows 也认）：
+
+  ```json
+  {
+    "packages": ["C:/Users/<你的用户名>/pi-omp-theme"]
+  }
+  ```
+
+### 包里有什么 / 只要主题、不要扩展
 
 除主题与 omp TUI 扩展外，本包还带两个独立的小扩展（纯 TypeScript，放在 `extensions/`）：
 
@@ -30,14 +93,19 @@ pi install git:github.com/pureages/pi-omp-theme
 - `titlebar-spinner`：agent 工作时在终端标题栏显示 braille 转圈。
 
 安装后要单独开关这些扩展，用 `pi config`；只想要主题、不要任何扩展的话，可以在 `settings.json`
-里过滤掉整个包的扩展：
+里过滤掉整个包的扩展（`source` 要写成**你实际用的那种**：方式 A 用 `git:...`，方式 B 用解压出来的路径）：
 
 ```json
 { "packages": [{ "source": "git:github.com/pureages/pi-omp-theme", "extensions": [] }] }
 ```
 
-装好后在 pi 里用 `/reload`，或直接开新会话。主题名是 `titanium`（暗）/ `titanium-light`（亮），
-两个附加扩展随包自动生效。
+### 为什么 `dist/` 要入库
+
+- `pi install git:...` 只做 `git clone` + `npm install --omit=dev`（本包没有依赖，所以不会产生
+  `node_modules`），而 `pi.extensions` 指向的 `dist/extensions/pi-omp-theme.ts` 已经在仓库里；
+- `pi update --extensions` 更新前会执行 `git clean -fdx`，未跟踪的构建产物会被删掉。
+
+所以**改完源码要重新构建并提交 `dist/`**，否则别人（以及其他机器）装到的还是旧产物。见「本地开发」。
 
 ## 这个 fork 改了什么
 
