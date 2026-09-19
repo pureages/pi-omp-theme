@@ -1,6 +1,6 @@
 {
   "name": "@nguyenquangthai/pi-omp-theme",
-  "version": "1.1.0-fork.1",
+  "version": "1.1.0-fork.2",
   "description": "An OMP-inspired visual theme and TUI presentation extension for Pi.",
   "license": "MIT",
   "author": "Nguyen Quang Thai",
@@ -28,7 +28,8 @@
   ],
   "pi": {
     "extensions": [
-      "./dist/extensions/pi-omp-theme.ts"
+      "./dist/extensions/pi-omp-theme.ts",
+      "./extensions"
     ],
     "themes": [
       "./themes"
@@ -36,6 +37,7 @@
   },
   "files": [
     "dist/**/*.ts",
+    "extensions",
     "themes",
     "README.md",
     "CHANGELOG.md",

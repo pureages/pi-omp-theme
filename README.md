@@ -24,7 +24,20 @@ pi install git:github.com/pureages/pi-omp-theme
 
 因此**改完源码要重新构建并提交 `dist/`**，否则别人（以及别的机器）装到的还是旧产物。见下方「本地开发」。
 
-装好后在 pi 里用 `/reload`，或直接开新会话。主题名是 `titanium`（暗）/ `titanium-light`（亮）。
+除主题与 omp TUI 扩展外，本包还带两个独立的小扩展（纯 TypeScript，放在 `extensions/`）：
+
+- `hidden-thinking-label`：折叠的 thinking 块标签显示实时 token 数与 t/s，结束后显示 `Thought N tokens`；
+- `titlebar-spinner`：agent 工作时在终端标题栏显示 braille 转圈。
+
+安装后要单独开关这些扩展，用 `pi config`；只想要主题、不要任何扩展的话，可以在 `settings.json`
+里过滤掉整个包的扩展：
+
+```json
+{ "packages": [{ "source": "git:github.com/pureages/pi-omp-theme", "extensions": [] }] }
+```
+
+装好后在 pi 里用 `/reload`，或直接开新会话。主题名是 `titanium`（暗）/ `titanium-light`（亮），
+两个附加扩展随包自动生效。
 
 ## 这个 fork 改了什么
 
@@ -127,12 +140,14 @@ pi update --extensions      # 让本机装的那份（~/.pi/agent/git/...）跟�
 | `app/` | 装配与运行时（快照、命令、配置存储） |
 | `pi/` | 唯一接触 pi API 的一层（生命周期、兼容性补丁、会话用量） |
 
-其他文件：`themes/` 两个主题 JSON、`tests/` 测试（`node scripts/run-tests.mjs`）、
-`scripts/package-smoke.mjs` 打包/加载冒烟检查、`docs/releasing.md` 上游的发布流程（本 fork 不发布到 npm）。
+其他文件：`themes/` 两个主题 JSON、`extensions/` 两个独立扩展（`hidden-thinking-label.ts`、
+`titlebar-spinner.ts`，不在 omp bundle 内，由 `pi.extensions` 单独声明）、`tests/` 测试
+（`node scripts/run-tests.mjs`）、`scripts/package-smoke.mjs` 打包/加载冒烟检查、
+`docs/releasing.md` 上游的发布流程（本 fork 不发布到 npm）。
 
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。上游版权归 QuangThai；本 fork 的修改同样以 MIT 发布。
 
 改动记录见 [CHANGELOG.md](CHANGELOG.md)：最上面是 fork 自己的版本线
-（`1.1.0-fork.1`，基于最后合并的上游版本 `1.0.12`），下面全是上游历史，原样保留。
+（`1.1.0-fork.2`，基于最后合并的上游版本 `1.0.12`），下面全是上游历史，原样保留。

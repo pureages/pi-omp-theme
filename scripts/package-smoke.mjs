@@ -32,7 +32,7 @@ assert.ok(
   !manifest.keywords?.includes("pi-package"),
   "the fork is not advertised on pi.dev/packages",
 );
-assert.deepEqual(manifest.pi?.extensions, [expected.entry]);
+assert.deepEqual(manifest.pi?.extensions, [expected.entry, "./extensions"]);
 assert.deepEqual(manifest.pi?.themes, ["./themes"]);
 // fork: no gallery preview. The fork has no screenshots in-tree, and upstream's
 // preview would advertise a status line and startup screen this fork no longer
@@ -71,6 +71,14 @@ const jiti = createJiti(pathToFileURL(piPackageJson).href, {
 const factory = await jiti.import(resolve(expected.entry), { default: true });
 assert.equal(typeof factory, "function", "compiled extension must export a default factory");
 
+// The standalone extensions in `extensions/` ship as plain TypeScript and are
+// loaded through the same jiti path. Import them too, so a syntax or host-binding
+// regression fails `npm run check` instead of only surfacing at runtime.
+for (const file of ["extensions/hidden-thinking-label.ts", "extensions/titlebar-spinner.ts"]) {
+  const extraFactory = await jiti.import(resolve(file), { default: true });
+  assert.equal(typeof extraFactory, "function", `${file} must export a default factory`);
+}
+
 for (const file of ["themes/titanium.json", "themes/titanium-light.json"]) {
   const theme = JSON.parse(readFileSync(file, "utf8"));
   assert.equal(typeof theme.name, "string", `${file}: missing name`);
@@ -104,6 +112,8 @@ const expectedFiles = [
   "LICENSE",
   "README.md",
   "dist/extensions/pi-omp-theme.ts",
+  "extensions/hidden-thinking-label.ts",
+  "extensions/titlebar-spinner.ts",
   "package.json",
   "themes/titanium-light.json",
   "themes/titanium.json",

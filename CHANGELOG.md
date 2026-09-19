@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.1.0-fork.2] - 2026-09-19
+
+### Added
+
+- Ship two standalone extensions under `extensions/`: `hidden-thinking-label` (live token count / t·s in the collapsed thinking label) and `titlebar-spinner` (braille spinner in the terminal title while the agent works).
+- `pi.extensions` now also lists `./extensions`, so `pi install git:github.com/pureages/pi-omp-theme` loads them together with the compiled bundle — no separate local copy needed.
+
 ## [1.1.0-fork.1] - 2026-09-19
 
 Fork line. Everything below this entry is upstream history, kept verbatim. The fork
